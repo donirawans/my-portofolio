@@ -74,28 +74,34 @@ document.addEventListener('DOMContentLoaded', () => {
   if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobile);
   mobileLinks.forEach(link => link.addEventListener('click', closeMobile));
 
-  // ========== Contact Form Validation ==========
+  // ========== Contact Form Submission ==========
   const contactForm = document.getElementById('contact-form');
   if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
+    contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const message = document.getElementById('message').value.trim();
 
-      if (!name || !email || !message) {
-        alert('Please fill all fields.');
-        return;
+      const submitButton = contactForm.querySelector('button[type="submit"]');
+      const submitLabel = submitButton.querySelector('span');
+      submitButton.disabled = true;
+      submitLabel.textContent = 'Sending...';
+
+      try {
+        const response = await fetch(contactForm.action, {
+          method: 'POST',
+          body: new FormData(contactForm),
+          headers: { Accept: 'application/json' }
+        });
+
+        if (!response.ok) throw new Error('Form submission failed');
+
+        contactForm.reset();
+        alert('Terima kasih, pesan Anda telah terkirim!');
+      } catch (error) {
+        alert('Pesan gagal dikirim. Silakan coba lagi.');
+      } finally {
+        submitButton.disabled = false;
+        submitLabel.textContent = 'Send Message';
       }
-
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(email)) {
-        alert('Please enter a valid email address.');
-        return;
-      }
-
-      alert('Thank you, ' + name + '! Your message has been received.');
-      contactForm.reset();
     });
   }
 
