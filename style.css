@@ -3,6 +3,11 @@
    ============================================ */
 
 /* ---------- Base ---------- */
+html {
+  /* Offset agar judul section tidak tertutup navbar sticky (h-20) */
+  scroll-padding-top: 6rem;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   color: #1E293B;
@@ -115,8 +120,6 @@ body {
   pointer-events: none;
 }
 
-.avatar-body-mask .avatar-img,
-.avatar-head-mask .avatar-img,
 .avatar-img {
   position: absolute;
   bottom: 0;
@@ -143,11 +146,13 @@ body {
 /* ---------- Mobile Menu ---------- */
 .mobile-menu {
   transform: translateX(100%);
-  transition: transform 0.3s ease-in-out;
+  visibility: hidden;
+  transition: transform 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
 .mobile-menu.open {
   transform: translateX(0);
+  visibility: visible;
 }
 
 /* ---------- Scroll Reveal Animation ---------- */
@@ -160,11 +165,6 @@ body {
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-/* ---------- Project Card Hover ---------- */
-.project-card-link {
-  transition: color 0.2s ease;
 }
 
 /* ---------- Custom Scrollbar ---------- */
@@ -187,6 +187,9 @@ body {
 
 /* ---------- Reduced Motion ---------- */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   .float-anim {
     animation: none;
   }

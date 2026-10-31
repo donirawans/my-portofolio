@@ -10,45 +10,55 @@ document.addEventListener('DOMContentLoaded', () => {
     .map(id => document.getElementById(id))
     .filter(Boolean);
 
-  function setActiveLink(clickedLink) {
-    navLinks.forEach(link => link.classList.remove('active'));
-    clickedLink.classList.add('active');
-  }
-
-  navLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      setActiveLink(link);
+  const setActiveLink = (id) => {
+    navLinks.forEach(link => {
+      link.classList.toggle('active', link.getAttribute('href') === '#' + id);
     });
-  });
+  };
 
   let isClickScrolling = false;
+  let scrollLockTimer = null;
+  let scrollTicking = false;
+
+  // Satu listener per link: set state aktif + tandai sedang smooth-scroll
   navLinks.forEach(link => {
     link.addEventListener('click', () => {
+      const id = (link.getAttribute('href') || '').replace('#', '');
+      if (id) setActiveLink(id);
+
       isClickScrolling = true;
-      setTimeout(() => { isClickScrolling = false; }, 800);
+      clearTimeout(scrollLockTimer);
+      scrollLockTimer = setTimeout(() => {
+        isClickScrolling = false;
+        updateActiveSection();
+      }, 1000);
     });
   });
 
-  window.addEventListener('scroll', () => {
+  const updateActiveSection = () => {
     if (isClickScrolling) return;
+
     const scrollPos = window.scrollY + 120;
 
     for (let i = sections.length - 1; i >= 0; i--) {
       const sec = sections[i];
       if (sec.offsetTop <= scrollPos) {
-        const targetHref = '#' + sec.id;
-        navLinks.forEach(link => {
-          if (link.getAttribute('href') === targetHref) {
-            if (!link.classList.contains('active')) {
-              navLinks.forEach(l => l.classList.remove('active'));
-              link.classList.add('active');
-            }
-          }
-        });
-        break;
+        setActiveLink(sec.id);
+        return;
       }
     }
-  });
+  };
+
+  window.addEventListener('scroll', () => {
+    if (scrollTicking) return;
+    scrollTicking = true;
+    window.requestAnimationFrame(() => {
+      updateActiveSection();
+      scrollTicking = false;
+    });
+  }, { passive: true });
+
+  updateActiveSection();
 
   // ========== Mobile Menu Toggle ==========
   const mobileBtn = document.getElementById('mobile-menu-btn');
@@ -57,16 +67,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const mobileClose = document.getElementById('mobile-menu-close');
   const mobileLinks = document.querySelectorAll('#mobile-nav a');
 
+  const isMobileMenuOpen = () => mobileMenu.classList.contains('open');
+
   function openMobile() {
     mobileMenu.classList.add('open');
     mobileOverlay.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'true');
+    const firstLink = mobileMenu.querySelector('a');
+    if (firstLink) firstLink.focus();
   }
 
   function closeMobile() {
     mobileMenu.classList.remove('open');
     mobileOverlay.classList.add('hidden');
     document.body.style.overflow = '';
+    if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'false');
   }
 
   if (mobileBtn) mobileBtn.addEventListener('click', openMobile);
@@ -74,52 +90,33 @@ document.addEventListener('DOMContentLoaded', () => {
   if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobile);
   mobileLinks.forEach(link => link.addEventListener('click', closeMobile));
 
-  // ========== Contact Form Submission ==========
-  const contactForm = document.getElementById('contact-form');
-  if (contactForm) {
-    contactForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const submitButton = contactForm.querySelector('button[type="submit"]');
-      const submitLabel = submitButton.querySelector('span');
-      submitButton.disabled = true;
-      submitLabel.textContent = 'Sending...';
-
-      try {
-        const response = await fetch(contactForm.action, {
-          method: 'POST',
-          body: new FormData(contactForm),
-          headers: { Accept: 'application/json' }
-        });
-
-        if (!response.ok) throw new Error('Form submission failed');
-
-        contactForm.reset();
-        alert('Terima kasih, pesan Anda telah terkirim!');
-      } catch (error) {
-        alert('Pesan gagal dikirim. Silakan coba lagi.');
-      } finally {
-        submitButton.disabled = false;
-        submitLabel.textContent = 'Send Message';
-      }
-    });
-  }
+  // Tutup menu dengan tombol ESC, lalu kembalikan fokus ke tombol pembuka
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isMobileMenuOpen()) {
+      closeMobile();
+      if (mobileBtn) mobileBtn.focus();
+    }
+  });
 
   // ========== Scroll Reveal Animation ==========
   const revealElements = document.querySelectorAll('.reveal');
-  const revealOnScroll = () => {
-    const windowHeight = window.innerHeight;
-    revealElements.forEach(el => {
-      const elementTop = el.getBoundingClientRect().top;
-      if (elementTop < windowHeight - 100) {
-        el.classList.add('visible');
-      }
-    });
-  };
 
   if (revealElements.length > 0) {
-    window.addEventListener('scroll', revealOnScroll);
-    revealOnScroll();
+    if ('IntersectionObserver' in window) {
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -100px 0px' });
+
+      revealElements.forEach(el => revealObserver.observe(el));
+    } else {
+      // Fallback browser lama: langsung tampilkan semua
+      revealElements.forEach(el => el.classList.add('visible'));
+    }
   }
 
   // ========== Dynamic Year in Footer ==========
