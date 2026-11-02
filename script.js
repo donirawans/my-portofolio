@@ -61,33 +61,46 @@ document.addEventListener('DOMContentLoaded', () => {
   updateActiveSection();
 
   // ========== Mobile Menu Toggle ==========
+  // Kontrol utama memakai checkbox + <label>, jadi buka/tutup tetap jalan tanpa JS.
+  // JS hanya menyinkronkan state tambahan: scroll lock, aria, dan class.
+  const mobileToggle = document.getElementById('mobile-menu-toggle');
   const mobileBtn = document.getElementById('mobile-menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');
   const mobileOverlay = document.getElementById('mobile-overlay');
   const mobileClose = document.getElementById('mobile-menu-close');
   const mobileLinks = document.querySelectorAll('#mobile-nav a');
 
-  const isMobileMenuOpen = () => mobileMenu.classList.contains('open');
+  const isMobileMenuOpen = () =>
+    Boolean(mobileMenu && (mobileMenu.classList.contains('open') || (mobileToggle && mobileToggle.checked)));
 
-  function openMobile() {
-    mobileMenu.classList.add('open');
-    mobileOverlay.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'true');
-    const firstLink = mobileMenu.querySelector('a');
-    if (firstLink) firstLink.focus();
+  function setMenuState(open) {
+    if (!mobileMenu || !mobileOverlay) return;
+
+    if (mobileToggle) mobileToggle.checked = open;
+    mobileMenu.classList.toggle('open', open);
+    mobileMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
+    mobileOverlay.classList.toggle('hidden', !open);
+    document.body.style.overflow = open ? 'hidden' : '';
+    if (mobileBtn) mobileBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
-  function closeMobile() {
-    mobileMenu.classList.remove('open');
-    mobileOverlay.classList.add('hidden');
-    document.body.style.overflow = '';
-    if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'false');
+  const closeMobile = () => setMenuState(false);
+
+  if (mobileToggle) {
+    mobileToggle.addEventListener('change', () => setMenuState(mobileToggle.checked));
   }
 
-  if (mobileBtn) mobileBtn.addEventListener('click', openMobile);
-  if (mobileClose) mobileClose.addEventListener('click', closeMobile);
-  if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobile);
+  // Label dengan role="button" tidak otomatis aktif lewat keyboard, jadi tangani manual
+  [mobileBtn, mobileClose].forEach(el => {
+    if (!el) return;
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      if (mobileToggle) mobileToggle.click();
+      else setMenuState(!isMobileMenuOpen());
+    });
+  });
+
   mobileLinks.forEach(link => link.addEventListener('click', closeMobile));
 
   // Tutup menu dengan tombol ESC, lalu kembalikan fokus ke tombol pembuka

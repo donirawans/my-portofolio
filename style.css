@@ -144,15 +144,77 @@ body {
 }
 
 /* ---------- Mobile Menu ---------- */
+/* Properti inti ditulis di sini juga supaya menu tetap rapi walau CDN Tailwind gagal dimuat */
+#mobile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  background: rgba(0, 0, 0, 0.4);
+}
+
 .mobile-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 70;
+  width: 18rem;
+  height: 100%;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   transform: translateX(100%);
   visibility: hidden;
-  transition: transform 0.3s ease-in-out, visibility 0.3s ease-in-out;
+  pointer-events: none;
+  /* visibility ditunda sampai animasi tutup selesai, supaya tidak bentrok di mobile */
+  transition: transform 0.3s ease-in-out, visibility 0s linear 0.3s;
 }
 
 .mobile-menu.open {
   transform: translateX(0);
   visibility: visible;
+  pointer-events: auto;
+  transition: transform 0.3s ease-in-out, visibility 0s;
+}
+
+/* Checkbox pengendali menu: tersembunyi tapi tetap berfungsi (fallback tanpa JS) */
+.mobile-menu-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#mobile-menu-toggle:checked~#mobile-overlay {
+  display: block;
+}
+
+#mobile-menu-toggle:checked~#mobile-menu {
+  transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition: transform 0.3s ease-in-out, visibility 0s;
+}
+
+/* Hilangkan tap delay & highlight bawaan browser di kontrol menu mobile */
+#mobile-menu-btn,
+#mobile-menu-close,
+#mobile-overlay,
+#mobile-nav a {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#mobile-menu-btn,
+#mobile-menu-close {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ---------- Scroll Reveal Animation ---------- */
